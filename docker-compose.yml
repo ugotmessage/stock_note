@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: python-app:latest
+    container_name: python-app
+    ports:
+      - "5001:5000"
+    working_dir: /app
+    volumes:
+      - ../Web/stock_note_project:/app   # 把程式碼掛進容器
+    networks:
+      - my-network
+    #env_file:
+    #  - .env
+
+networks:
+  my-network:
+    external: true
