@@ -118,6 +118,49 @@ header p {
     min-height: 100px;
 }
 
+/* 搜尋容器和建議樣式 */
+.search-container {
+    position: relative;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #3498db;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.search-suggestion {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #e1e8ed;
+    transition: background-color 0.2s ease;
+}
+
+.search-suggestion:hover {
+    background-color: #f8f9fa;
+}
+
+.search-suggestion:last-child {
+    border-bottom: none;
+}
+
+/* 只讀輸入框樣式 */
+.form-group input[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
 .submit-btn {
     background: linear-gradient(45deg, #3498db, #2980b9);
     color: white;
@@ -287,6 +330,10 @@ footer {
     .note-content {
         max-width: 200px;
     }
+    
+    .search-suggestions {
+        max-height: 150px;
+    }
 }
 
 @media (max-width: 480px) {
@@ -302,5 +349,10 @@ footer {
     .type-badge {
         padding: 4px 8px;
         font-size: 0.75rem;
+    }
+    
+    .search-suggestion {
+        padding: 10px 12px;
+        font-size: 0.9rem;
     }
 }

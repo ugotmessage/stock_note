@@ -32,8 +32,17 @@
             <form method="POST" action="/add" class="note-form">
                 <div class="form-group">
                     <label for="stock_code">股票代碼 *</label>
-                    <input type="text" id="stock_code" name="stock_code" 
-                           placeholder="例如: 2330" required maxlength="10">
+                    <div class="search-container">
+                        <input type="text" id="stock_code" name="stock_code" 
+                               placeholder="輸入股票代碼或名稱搜尋..." required maxlength="10">
+                        <div id="search-suggestions" class="search-suggestions"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="stock_name">股票名稱 *</label>
+                    <input type="text" id="stock_name" name="stock_name" 
+                           placeholder="股票名稱會自動填入" required maxlength="50" readonly>
                 </div>
 
                 <div class="form-group">
@@ -103,6 +112,81 @@
     </div>
 
     <script>
+        // 股票搜尋功能
+        let searchTimeout;
+        const stockCodeInput = document.getElementById('stock_code');
+        const stockNameInput = document.getElementById('stock_name');
+        const searchSuggestions = document.getElementById('search-suggestions');
+
+        // 搜尋建議功能
+        stockCodeInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            // 清除之前的搜尋建議
+            searchSuggestions.innerHTML = '';
+            searchSuggestions.style.display = 'none';
+            
+            // 清除股票名稱
+            stockNameInput.value = '';
+            
+            if (query.length < 1) return;
+            
+            // 防抖動搜尋
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                searchStocks(query);
+            }, 300);
+        });
+
+        // 搜尋股票
+        async function searchStocks(query) {
+            try {
+                const response = await fetch(`/search-stocks?q=${encodeURIComponent(query)}`);
+                const stocks = await response.json();
+                
+                if (stocks.length > 0) {
+                    displaySuggestions(stocks);
+                }
+            } catch (error) {
+                console.error('搜尋股票時發生錯誤:', error);
+            }
+        }
+
+        // 顯示搜尋建議
+        function displaySuggestions(stocks) {
+            searchSuggestions.innerHTML = '';
+            
+            stocks.forEach(stock => {
+                const suggestion = document.createElement('div');
+                suggestion.className = 'search-suggestion';
+                suggestion.textContent = stock.display;
+                suggestion.dataset.code = stock.code;
+                suggestion.dataset.name = stock.name;
+                
+                suggestion.addEventListener('click', function() {
+                    selectStock(stock.code, stock.name);
+                });
+                
+                searchSuggestions.appendChild(suggestion);
+            });
+            
+            searchSuggestions.style.display = 'block';
+        }
+
+        // 選擇股票
+        function selectStock(code, name) {
+            stockCodeInput.value = code;
+            stockNameInput.value = name;
+            searchSuggestions.style.display = 'none';
+        }
+
+        // 點擊外部隱藏搜尋建議
+        document.addEventListener('click', function(e) {
+            if (!stockCodeInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+                searchSuggestions.style.display = 'none';
+            }
+        });
+
         // 自動隱藏 flash 消息
         setTimeout(function() {
             const flashMessages = document.querySelectorAll('.flash-message');
@@ -118,6 +202,7 @@
         document.querySelector('.note-form').addEventListener('submit', function() {
             setTimeout(function() {
                 document.getElementById('stock_code').value = '';
+                document.getElementById('stock_name').value = '';
                 document.getElementById('note_type').value = '';
                 document.getElementById('content').value = '';
             }, 100);

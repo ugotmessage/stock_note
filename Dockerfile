@@ -11,6 +11,12 @@ RUN apt-get update && apt-get install -y \
     pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
+# 複製依賴文件
+COPY requirements.txt .
+
+# 安裝Python依賴
+RUN pip install --no-cache-dir -r requirements.txt
+
 # 暴露端口
 EXPOSE 5000
 
@@ -19,6 +25,6 @@ ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
 
-# 在容器啟動時再安裝依賴（依賴於掛載進來的程式碼）
-CMD ["/bin/sh", "-c", "pip install --no-cache-dir -r requirements.txt && python app.py"]
+# 啟動命令
+CMD ["python", "app.py"]
 
