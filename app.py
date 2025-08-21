@@ -20,7 +20,7 @@ def index():
 
 @app.route('/search-stocks', methods=['GET'])
 def search_stocks():
-	"""使用 Yahoo Finance API 提供即時搜尋建議，若無結果再退回本地 DB 搜尋"""
+	"""優先從本地 DB 模糊搜尋，若無結果再退回 Yahoo Finance API 提供即時搜尋建議"""
 	try:
 		query = request.args.get('q', '').strip()
 		print(f"收到搜尋請求: '{query}'")
@@ -29,31 +29,34 @@ def search_stocks():
 			print("查詢為空，返回空結果")
 			return jsonify([])
 
-		# 1) 先用 Yahoo Finance 搜尋
-		print("呼叫 Yahoo Finance API...")
-		externals = external_api.search_yahoo_stocks(query, limit=10)
-		print(f"Yahoo API 返回 {len(externals)} 個結果")
-
 		results = []
-		for s in externals:
+
+		# 1) 先從本地 stocks 資料表模糊查詢
+		print("嘗試本地搜尋...")
+		locals_ = db_manager.search_stocks(query, limit=10)
+		print(f"本地搜尋返回 {len(locals_)} 個結果")
+		
+		for s in locals_:
 			results.append({
-				'code': s['code'],
-				'name': s['name'],
-				'display': f"{s['code']} - {s['name']}"
+				'code': s['stock_code'],
+				'name': s['stock_name'],
+				'display': f"{s['stock_code']} - {s['stock_name']}"
 			})
 
-		# 2) 若外部無結果，退回本地 stocks 資料表模糊查詢
+		# 2) 若本地無結果，再呼叫 Yahoo Finance 搜尋
 		if not results:
-			print("Yahoo 無結果，嘗試本地搜尋...")
-			locals_ = db_manager.search_stocks(query, limit=10)
-			print(f"本地搜尋返回 {len(locals_)} 個結果")
+			print("本地無結果，呼叫 Yahoo Finance API...")
+			externals = external_api.search_yahoo_stocks(query, limit=10)
+			print(f"Yahoo API 返回 {len(externals)} 個結果")
 			
-			for s in locals_:
-				results.append({
-					'code': s['stock_code'],
-					'name': s['stock_name'],
-					'display': f"{s['stock_code']} - {s['stock_name']}"
-				})
+			for s in externals:
+				# 為了避免重複，再次確認代碼是否已存在 (雖然理論上此時 results 應為空)
+				if not any(r['code'] == s['code'] for r in results):
+					results.append({
+						'code': s['code'],
+						'name': s['name'],
+						'display': f"{s['code']} - {s['name']}"
+					})
 
 		print(f"最終返回 {len(results)} 個結果")
 		return jsonify(results)

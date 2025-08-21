@@ -1,4 +1,5 @@
 import requests
+import re # 匯入正規表示式模組
 from typing import List, Dict
 
 YAHOO_SEARCH_URLS = [
@@ -8,12 +9,14 @@ YAHOO_SEARCH_URLS = [
 
 DEFAULT_HEADERS = {
 	"User-Agent": (
-		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
 		"AppleWebKit/537.36 (KHTML, like Gecko) "
-		"Chrome/124.0 Safari/537.36"
+		"Chrome/124.0.0.0 Safari/537.36"
 	),
 	"Accept": "application/json, text/plain, */*",
-	"Accept-Language": "zh-TW,zh;q=0.9,en;q=0.8",
+	"Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+	"Origin": "https://finance.yahoo.com",
+    "Referer": "https://finance.yahoo.com/",
 	"Connection": "keep-alive",
 }
 
@@ -28,7 +31,7 @@ def search_yahoo_stocks(query: str, limit: int = 10) -> List[Dict[str, str]]:
 	if not query:
 		return []
 
-	search_queries = [query, f"{query} TW", f"{query} 台股", f"{query} 台灣"]
+	search_queries = [query, f"{query} TW", f"{query} 台股"]
 	all_results: List[Dict[str, str]] = []
 
 	for url in YAHOO_SEARCH_URLS:
@@ -41,27 +44,38 @@ def search_yahoo_stocks(query: str, limit: int = 10) -> List[Dict[str, str]]:
 				"region": "TW",
 			}
 			try:
-				resp = requests.get(url, params=params, headers=DEFAULT_HEADERS, timeout=6)
+				resp = requests.get(url, params=params, headers=DEFAULT_HEADERS, timeout=8)
 				status = resp.status_code
 				if status != 200:
 					print(f"Yahoo 搜尋非200回應 (url={url}, term={term}, status={status})")
 					continue
+				
 				data = resp.json() or {}
 				quotes = data.get("quotes", [])
+				
 				for q in quotes:
 					symbol = q.get("symbol") or ""
 					if not symbol:
 						continue
+
 					if is_taiwan_stock(symbol, q):
 						code = symbol.split(".")[0]
-						name = q.get("shortname") or q.get("longname") or code
+						# *** 修改點：優先使用 longname，因為它通常是完整的中文名稱 ***
+						name = q.get("longname") or q.get("shortname") or code
+						
 						if not any(r["code"] == code for r in all_results):
 							all_results.append({"code": code, "name": name})
-			except Exception as e:
-				print(f"Yahoo 搜尋失敗 (url={url}, term={term}): {e}")
-				continue
 
-	# 去重與截斷
+			except requests.exceptions.RequestException as e:
+				print(f"Yahoo 搜尋請求失敗 (url={url}, term={term}): {e}")
+				continue
+			except Exception as e:
+				print(f"Yahoo 搜尋發生未知錯誤 (url={url}, term={term}): {e}")
+				continue
+		
+		if all_results:
+			break
+
 	seen = set()
 	unique_results: List[Dict[str, str]] = []
 	for item in all_results:
@@ -75,20 +89,23 @@ def search_yahoo_stocks(query: str, limit: int = 10) -> List[Dict[str, str]]:
 
 
 def is_taiwan_stock(symbol: str, quote_data: dict) -> bool:
-	"""判斷是否為台股股票"""
-	# 1) 後綴判斷
+	"""判斷是否為台股股票（增加中文名稱檢查）"""
+	# 1) 後綴判斷 (最準確)
 	if symbol.endswith((".TW", ".TWO")):
 		return True
 	# 2) 交易所判斷
 	exchange = (quote_data.get("exchange") or "").upper()
-	if exchange in ("TWSE", "TPEX"):
+	if exchange in ("TWSE", "TPEX", "TAI"):
 		return True
-	# 3) 代碼形狀判斷
+		
+	name = quote_data.get("longname") or quote_data.get("shortname") or ""
+	# 3) *** 新增：名稱包含中文字元，能有效過濾掉純英文名稱的結果 ***
+	if re.search(r'[\u4e00-\u9fff]', name):
+		return True
+
+	# 4) 代碼形狀判斷 (作為備用)
 	code = symbol.split(".")[0]
-	if code.isdigit() and 4 <= len(code) <= 5 and code[0] in {"2","3","4","5","6","8"}:
+	if code.isdigit() and len(code) >= 4:
 		return True
-	# 4) 名稱關鍵字
-	name = (quote_data.get("shortname") or quote_data.get("longname") or "").lower()
-	if any(k in name for k in ["台灣", "台積", "鴻海", "聯發", "中華", "統一", "台達", "日月光"]):
-		return True
+		
 	return False
