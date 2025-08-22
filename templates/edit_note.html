@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯筆記 - 股票筆記管理系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✏️ 編輯筆記</h1>
+            <p>編輯您的股票投資筆記</p>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="form-section">
+            <div class="note-info">
+                <h3>筆記資訊</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>股票代碼:</label>
+                        <span class="value">{{ note.stock_code }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>股票名稱:</label>
+                        <span class="value">{{ note.stock_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>創建時間:</label>
+                        <span class="value">{{ note.created_at }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" class="note-form">
+                <div class="form-group">
+                    <label for="note_type">筆記類型 *</label>
+                    <select id="note_type" name="note_type" required>
+                        <option value="TAG" {% if note.note_type == 'TAG' %}selected{% endif %}>標籤 (TAG)</option>
+                        <option value="STORY" {% if note.note_type == 'STORY' %}selected{% endif %}>故事/分析 (STORY)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">內容 *</label>
+                    <textarea id="content" name="content" placeholder="輸入您的筆記內容..." required rows="6">{{ note.content }}</textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="submit-btn">💾 更新筆記</button>
+                    <a href="{{ url_for('index') }}" class="cancel-btn">❌ 取消</a>
+                </div>
+            </form>
+        </section>
+
+        <footer>
+            <p>&copy; 2024 股票筆記管理系統</p>
+        </footer>
+    </div>
+
+    <script>
+        // 自動隱藏 flash 訊息
+        setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(message) {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

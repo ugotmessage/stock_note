@@ -190,9 +190,13 @@ def add_note(stock_code, stock_name, note_type, content):
             cursor.close()
             connection.close()
 
-def get_all_notes():
+def get_all_notes(search_term='', sort_by='created_at', sort_order='DESC'):
     """
-    獲取所有筆記，按創建時間倒序排列
+    獲取所有筆記，支援搜尋和排序
+    參數:
+        search_term: 搜尋關鍵字（股票代碼、名稱或內容）
+        sort_by: 排序欄位 (stock_code, stock_name, note_type, created_at)
+        sort_order: 排序方向 (ASC, DESC)
     返回: 筆記列表，每個筆記是一個字典
     """
     connection = get_db_connection()
@@ -202,8 +206,8 @@ def get_all_notes():
     try:
         cursor = connection.cursor(dictionary=True)
         
-        # 查詢所有筆記，並聯接stocks表獲取股票名稱
-        query = """
+        # 基礎查詢
+        base_query = """
             SELECT 
                 n.id,
                 n.stock_code,
@@ -213,10 +217,41 @@ def get_all_notes():
                 n.created_at
             FROM notes n
             JOIN stocks s ON n.stock_code = s.stock_code
-            ORDER BY n.created_at DESC
         """
         
-        cursor.execute(query)
+        # 搜尋條件
+        where_clause = ""
+        params = []
+        
+        if search_term:
+            where_clause = """
+                WHERE n.stock_code LIKE %s 
+                   OR s.stock_name LIKE %s 
+                   OR n.content LIKE %s
+            """
+            search_pattern = f"%{search_term}%"
+            params = [search_pattern, search_pattern, search_pattern]
+        
+        # 排序
+        valid_sort_fields = ['stock_code', 'stock_name', 'note_type', 'created_at']
+        if sort_by not in valid_sort_fields:
+            sort_by = 'created_at'
+        
+        if sort_order not in ['ASC', 'DESC']:
+            sort_order = 'DESC'
+        
+        # 根據排序欄位調整查詢
+        if sort_by == 'stock_name':
+            order_clause = f"s.stock_name {sort_order}"
+        elif sort_by == 'created_at':
+            order_clause = f"n.created_at {sort_order}"
+        else:
+            order_clause = f"n.{sort_by} {sort_order}"
+        
+        # 組合完整查詢
+        full_query = f"{base_query} {where_clause} ORDER BY {order_clause}"
+        
+        cursor.execute(full_query, params)
         notes = cursor.fetchall()
         
         # 格式化時間顯示
@@ -229,6 +264,137 @@ def get_all_notes():
     except Error as e:
         print(f"獲取筆記時發生錯誤: {e}")
         return []
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def get_note_by_id(note_id):
+    """
+    根據ID獲取單一筆記
+    參數:
+        note_id: 筆記ID
+    返回: 筆記字典或None
+    """
+    connection = get_db_connection()
+    if not connection:
+        return None
+    
+    try:
+        cursor = connection.cursor(dictionary=True)
+        
+        query = """
+            SELECT 
+                n.id,
+                n.stock_code,
+                s.stock_name,
+                n.note_type,
+                n.content,
+                n.created_at
+            FROM notes n
+            JOIN stocks s ON n.stock_code = s.stock_code
+            WHERE n.id = %s
+        """
+        
+        cursor.execute(query, (note_id,))
+        note = cursor.fetchone()
+        
+        if note and note['created_at']:
+            note['created_at'] = note['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        return note
+        
+    except Error as e:
+        print(f"獲取筆記時發生錯誤: {e}")
+        return None
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def update_note(note_id, note_type, content):
+    """
+    更新筆記
+    參數:
+        note_id: 筆記ID
+        note_type: 新的筆記類型
+        content: 新的內容
+    返回: 布爾值，表示是否成功
+    """
+    connection = get_db_connection()
+    if not connection:
+        return False
+    
+    try:
+        cursor = connection.cursor()
+        
+        # 驗證筆記類型
+        if note_type not in ['TAG', 'STORY']:
+            print(f"無效的筆記類型: {note_type}")
+            return False
+        
+        # 更新筆記
+        update_query = """
+            UPDATE notes 
+            SET note_type = %s, content = %s, updated_at = CURRENT_TIMESTAMP
+            WHERE id = %s
+        """
+        
+        cursor.execute(update_query, (note_type, content, note_id))
+        connection.commit()
+        
+        if cursor.rowcount > 0:
+            print(f"筆記 {note_id} 更新成功")
+            return True
+        else:
+            print(f"筆記 {note_id} 不存在或更新失敗")
+            return False
+        
+    except Error as e:
+        print(f"更新筆記時發生錯誤: {e}")
+        if connection.is_connected():
+            connection.rollback()
+        return False
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def delete_note(note_id):
+    """
+    刪除筆記
+    參數:
+        note_id: 筆記ID
+    返回: 布爾值，表示是否成功
+    """
+    connection = get_db_connection()
+    if not connection:
+        return False
+    
+    try:
+        cursor = connection.cursor()
+        
+        # 先檢查筆記是否存在
+        check_query = "SELECT id FROM notes WHERE id = %s"
+        cursor.execute(check_query, (note_id,))
+        
+        if not cursor.fetchone():
+            print(f"筆記 {note_id} 不存在")
+            return False
+        
+        # 刪除筆記
+        delete_query = "DELETE FROM notes WHERE id = %s"
+        cursor.execute(delete_query, (note_id,))
+        connection.commit()
+        
+        print(f"筆記 {note_id} 刪除成功")
+        return True
+        
+    except Error as e:
+        print(f"刪除筆記時發生錯誤: {e}")
+        if connection.is_connected():
+            connection.rollback()
+        return False
     finally:
         if connection.is_connected():
             cursor.close()

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>表格標頭排序測試</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 表格標頭排序測試</h1>
+            <p>測試點擊表格標頭進行排序的功能</p>
+        </header>
+
+        <div class="flash-messages" id="flash-messages"></div>
+
+        <section class="table-section">
+            <div class="table-header">
+                <h2>📋 測試筆記列表</h2>
+                <div class="search-sort-controls">
+                    <div class="sort-controls">
+                        <select id="sort-field">
+                            <option value="created_at">按時間排序</option>
+                            <option value="stock_code">按股票代碼排序</option>
+                            <option value="stock_name">按股票名稱排序</option>
+                            <option value="note_type">按類型排序</option>
+                        </select>
+                        <button type="button" id="sort-order-btn" data-order="DESC">↓ 降序</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="notes-container">
+                <div class="table-container">
+                    <table class="notes-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="stock_code" class="sortable-header">股票代碼</th>
+                                <th data-sort="stock_name" class="sortable-header">股票名稱</th>
+                                <th data-sort="note_type" class="sortable-header">類型</th>
+                                <th>內容</th>
+                                <th data-sort="created_at" class="sortable-header">記錄時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notes-tbody">
+                            <tr data-note-id="1">
+                                <td class="stock-code">2330</td>
+                                <td class="stock-name">台積電</td>
+                                <td class="note-type">
+                                    <span class="type-badge tag">TAG</span>
+                                </td>
+                                <td class="note-content">護國神山，技術領先</td>
+                                <td class="created-time">2024-01-15 10:30:00</td>
+                                <td class="actions">
+                                    <button class="action-btn edit-btn">編輯</button>
+                                    <button class="action-btn delete-btn">刪除</button>
+                                </td>
+                            </tr>
+                            <tr data-note-id="2">
+                                <td class="stock-code">2317</td>
+                                <td class="stock-name">鴻海</td>
+                                <td class="note-type">
+                                    <span class="type-badge story">STORY</span>
+                                </td>
+                                <td class="note-content">代工龍頭，在iPhone等產品製造中扮演關鍵角色</td>
+                                <td class="created-time">2024-01-15 11:00:00</td>
+                                <td class="actions">
+                                    <button class="action-btn edit-btn">編輯</button>
+                                    <button class="action-btn delete-btn">刪除</button>
+                                </td>
+                            </tr>
+                            <tr data-note-id="3">
+                                <td class="stock-code">2454</td>
+                                <td class="stock-name">聯發科</td>
+                                <td class="note-type">
+                                    <span class="type-badge tag">TAG</span>
+                                </td>
+                                <td class="note-content">手機晶片大廠</td>
+                                <td class="created-time">2024-01-15 09:00:00</td>
+                                <td class="actions">
+                                    <button class="action-btn edit-btn">編輯</button>
+                                    <button class="action-btn delete-btn">刪除</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="stats">
+                    <p>共計 <strong id="notes-count">3</strong> 條筆記</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2024 股票筆記管理系統 - 標頭排序測試</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全域變數
+        let currentSortField = 'created_at';
+        let currentSortOrder = 'DESC';
+
+        // 排序功能
+        const sortFieldSelect = document.getElementById('sort-field');
+        const sortOrderBtn = document.getElementById('sort-order-btn');
+
+        sortFieldSelect.addEventListener('change', function() {
+            currentSortField = this.value;
+            updateTableHeaderVisualState();
+            showFlashMessage(`排序欄位變更為: ${this.options[this.selectedIndex].text}`, 'success');
+        });
+
+        sortOrderBtn.addEventListener('click', function() {
+            currentSortOrder = currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
+            this.textContent = currentSortOrder === 'ASC' ? '↑ 升序' : '↓ 降序';
+            this.dataset.order = currentSortOrder;
+            updateTableHeaderVisualState();
+            showFlashMessage(`排序方向變更為: ${currentSortOrder === 'ASC' ? '升序' : '降序'}`, 'success');
+        });
+
+        // 綁定表格標頭排序事件
+        function bindTableHeaderSortEvents() {
+            const sortableHeaders = document.querySelectorAll('.sortable-header');
+            sortableHeaders.forEach(header => {
+                header.removeEventListener('click', handleHeaderSort);
+                header.addEventListener('click', handleHeaderSort);
+            });
+        }
+
+        // 處理表格標頭點擊排序
+        function handleHeaderSort(event) {
+            const sortField = event.target.dataset.sort;
+            if (sortField) {
+                // 如果點擊的是當前排序欄位，則切換排序方向
+                if (currentSortField === sortField) {
+                    currentSortOrder = currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    // 如果是新的排序欄位，則設為降序
+                    currentSortField = sortField;
+                    currentSortOrder = 'DESC';
+                }
+                
+                // 更新排序控制器的狀態
+                sortFieldSelect.value = currentSortField;
+                sortOrderBtn.textContent = currentSortOrder === 'ASC' ? '↑ 升序' : '↓ 降序';
+                sortOrderBtn.dataset.order = currentSortOrder;
+                
+                // 更新表格標頭的視覺狀態
+                updateTableHeaderVisualState();
+                
+                // 顯示排序訊息
+                const fieldNames = {
+                    'stock_code': '股票代碼',
+                    'stock_name': '股票名稱',
+                    'note_type': '筆記類型',
+                    'created_at': '記錄時間'
+                };
+                
+                showFlashMessage(`按 ${fieldNames[sortField]} ${currentSortOrder === 'ASC' ? '升序' : '降序'} 排序`, 'success');
+            }
+        }
+
+        // 更新表格標頭的視覺狀態
+        function updateTableHeaderVisualState() {
+            // 移除所有標頭的當前排序樣式
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.classList.remove('current-sort', 'asc', 'desc');
+            });
+            
+            // 為當前排序欄位添加樣式
+            const currentHeader = document.querySelector(`.sortable-header[data-sort="${currentSortField}"]`);
+            if (currentHeader) {
+                currentHeader.classList.add('current-sort');
+                currentHeader.classList.add(currentSortOrder.toLowerCase());
+            }
+        }
+
+        // 顯示 Flash 訊息
+        function showFlashMessage(message, type) {
+            const flashContainer = document.getElementById('flash-messages');
+            const flashMessage = document.createElement('div');
+            flashMessage.className = `flash-message ${type}`;
+            flashMessage.textContent = message;
+            
+            flashContainer.appendChild(flashMessage);
+            
+            // 自動隱藏
+            setTimeout(() => {
+                flashMessage.style.opacity = '0';
+                setTimeout(() => flashMessage.remove(), 300);
+            }, 3000);
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 設置初始排序狀態
+            sortFieldSelect.value = currentSortField;
+            sortOrderBtn.dataset.order = currentSortOrder;
+            
+            // 綁定表格標頭點擊事件
+            bindTableHeaderSortEvents();
+            
+            // 更新表格標頭的視覺狀態
+            updateTableHeaderVisualState();
+            
+            showFlashMessage('🚀 標頭排序測試頁面已載入！點擊表格標頭進行排序測試', 'success');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>樣式測試頁面</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📈 股票筆記管理系統</h1>
+            <p>管理您的股票投資筆記和標籤</p>
+        </header>
+
+        <div class="flash-messages">
+            <div class="flash-message success">✅ 成功訊息測試</div>
+            <div class="flash-message error">❌ 錯誤訊息測試</div>
+        </div>
+
+        <section class="form-section">
+            <h2>➕ 添加新筆記</h2>
+            <form class="note-form">
+                <div class="form-group">
+                    <label for="stock_code">股票代碼 *</label>
+                    <div class="search-container">
+                        <input type="text" id="stock_code" name="stock_code" placeholder="輸入股票代碼或名稱搜尋..." required maxlength="10">
+                        <div id="search-suggestions" class="search-suggestions">
+                            <div class="search-suggestion">2330 - 台積電</div>
+                            <div class="search-suggestion">2317 - 鴻海</div>
+                            <div class="search-suggestion">2454 - 聯發科</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="stock_name">股票名稱 *</label>
+                    <input type="text" id="stock_name" name="stock_name" placeholder="股票名稱會自動填入" required maxlength="50" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="note_type">筆記類型 *</label>
+                    <select id="note_type" name="note_type" required>
+                        <option value="">請選擇類型</option>
+                        <option value="TAG">標籤 (TAG)</option>
+                        <option value="STORY">故事/分析 (STORY)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="content">內容 *</label>
+                    <textarea id="content" name="content" placeholder="輸入您的筆記內容..." required rows="4"></textarea>
+                </div>
+                <button type="submit" class="submit-btn">💾 保存筆記</button>
+            </form>
+        </section>
+
+        <section class="table-section">
+            <div class="table-header">
+                <h2>📋 所有筆記</h2>
+                <form class="search-form">
+                    <input type="text" name="search" placeholder="搜尋筆記..." value="測試搜尋">
+                    <button type="submit">🔍</button>
+                </form>
+            </div>
+
+            <div class="table-container">
+                <table class="notes-table">
+                    <thead>
+                        <tr>
+                            <th><a href="#">股票代碼</a></th>
+                            <th><a href="#">股票名稱</a></th>
+                            <th><a href="#">類型</a></th>
+                            <th>內容</th>
+                            <th><a href="#">記錄時間</a></th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="stock-code">2330</td>
+                            <td class="stock-name">台積電</td>
+                            <td class="note-type">
+                                <span class="type-badge tag">TAG</span>
+                            </td>
+                            <td class="note-content">護國神山，技術領先</td>
+                            <td class="created-time">2024-01-15 10:30:00</td>
+                            <td class="actions">
+                                <a href="#" class="action-btn edit-btn">編輯</a>
+                                <button class="action-btn delete-btn">刪除</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="stock-code">2317</td>
+                            <td class="stock-name">鴻海</td>
+                            <td class="note-type">
+                                <span class="type-badge story">STORY</span>
+                            </td>
+                            <td class="note-content">代工龍頭，在iPhone等產品製造中扮演關鍵角色</td>
+                            <td class="created-time">2024-01-15 11:00:00</td>
+                            <td class="actions">
+                                <a href="#" class="action-btn edit-btn">編輯</a>
+                                <button class="action-btn delete-btn">刪除</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="stats">
+                <p>共計 <strong>2</strong> 條筆記</p>
+            </div>
+        </section>
+
+        <footer>
+            <p>&copy; 2024 股票筆記管理系統</p>
+        </footer>
+    </div>
+
+    <script>
+        // 顯示搜尋建議
+        document.getElementById('search-suggestions').style.display = 'block';
+        
+        // 點擊搜尋建議
+        document.querySelectorAll('.search-suggestion').forEach(item => {
+            item.addEventListener('click', function() {
+                const text = this.textContent;
+                const [code, name] = text.split(' - ');
+                document.getElementById('stock_code').value = code;
+                document.getElementById('stock_name').value = name;
+                document.getElementById('search-suggestions').style.display = 'none';
+            });
+        });
+        
+        // 點擊外部隱藏搜尋建議
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('search-suggestions').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

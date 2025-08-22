@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX 功能測試頁面</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧪 AJAX 功能測試</h1>
+            <p>測試無刷新的筆記管理功能</p>
+        </header>
+
+        <div class="flash-messages" id="flash-messages"></div>
+
+        <section class="form-section">
+            <h2>📝 測試筆記操作</h2>
+            <div class="test-controls">
+                <button onclick="testSearch()" class="submit-btn">🔍 測試搜尋</button>
+                <button onclick="testSort()" class="submit-btn">📊 測試排序</button>
+                <button onclick="testLoadNotes()" class="submit-btn">📋 載入筆記</button>
+            </div>
+        </section>
+
+        <section class="table-section">
+            <div class="table-header">
+                <h2>📋 筆記列表</h2>
+                <div class="search-sort-controls">
+                    <div class="search-form">
+                        <input type="text" id="note-search" placeholder="搜尋筆記...">
+                        <button type="button" id="search-btn">🔍</button>
+                    </div>
+                    <div class="sort-controls">
+                        <select id="sort-field">
+                            <option value="created_at">按時間排序</option>
+                            <option value="stock_code">按股票代碼排序</option>
+                            <option value="stock_name">按股票名稱排序</option>
+                            <option value="note_type">按類型排序</option>
+                        </select>
+                        <button type="button" id="sort-order-btn" data-order="DESC">↓ 降序</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="notes-container">
+                <div class="no-notes">
+                    <p>📝 點擊上方按鈕來測試功能</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 編輯筆記的 Modal -->
+        <div id="edit-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>✏️ 編輯筆記</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="note-info">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>股票代碼:</label>
+                                <span class="value" id="edit-stock-code"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>股票名稱:</label>
+                                <span class="value" id="edit-stock-name"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>創建時間:</label>
+                                <span class="value" id="edit-created-at"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <form id="edit-note-form">
+                        <input type="hidden" id="edit-note-id">
+                        <div class="form-group">
+                            <label for="edit-note-type">筆記類型 *</label>
+                            <select id="edit-note-type" name="note_type" required>
+                                <option value="TAG">標籤 (TAG)</option>
+                                <option value="STORY">故事/分析 (STORY)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-content">內容 *</label>
+                            <textarea id="edit-content" name="content" placeholder="輸入您的筆記內容..." required rows="4"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="submit-btn">💾 更新筆記</button>
+                            <button type="button" class="cancel-btn" onclick="closeEditModal()">❌ 取消</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>&copy; 2024 股票筆記管理系統 - AJAX 測試頁面</p>
+        </footer>
+    </div>
+
+    <script>
+        // 全域變數
+        let currentSortField = 'created_at';
+        let currentSortOrder = 'DESC';
+        let currentSearchTerm = '';
+
+        // 測試功能
+        async function testSearch() {
+            showFlashMessage('🔍 測試搜尋功能...', 'success');
+            currentSearchTerm = '台積電';
+            await loadNotes();
+        }
+
+        async function testSort() {
+            showFlashMessage('📊 測試排序功能...', 'success');
+            currentSortField = 'stock_code';
+            currentSortOrder = 'ASC';
+            await loadNotes();
+        }
+
+        async function testLoadNotes() {
+            showFlashMessage('📋 載入所有筆記...', 'success');
+            currentSearchTerm = '';
+            currentSortField = 'created_at';
+            currentSortOrder = 'DESC';
+            await loadNotes();
+        }
+
+        // 筆記搜尋功能
+        const noteSearchInput = document.getElementById('note-search');
+        const searchBtn = document.getElementById('search-btn');
+
+        noteSearchInput.addEventListener('input', function() {
+            currentSearchTerm = this.value.trim();
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadNotes();
+            }, 500);
+        });
+
+        searchBtn.addEventListener('click', function() {
+            currentSearchTerm = noteSearchInput.value.trim();
+            loadNotes();
+        });
+
+        // 排序功能
+        const sortFieldSelect = document.getElementById('sort-field');
+        const sortOrderBtn = document.getElementById('sort-order-btn');
+
+        sortFieldSelect.addEventListener('change', function() {
+            currentSortField = this.value;
+            loadNotes();
+        });
+
+        sortOrderBtn.addEventListener('click', function() {
+            currentSortOrder = currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
+            this.textContent = currentSortOrder === 'ASC' ? '↑ 升序' : '↓ 降序';
+            this.dataset.order = currentSortOrder;
+            loadNotes();
+        });
+
+        // 載入筆記
+        async function loadNotes() {
+            try {
+                const params = new URLSearchParams({
+                    search: currentSearchTerm,
+                    sort_by: currentSortField,
+                    sort_order: currentSortOrder
+                });
+
+                const response = await fetch(`/api/notes?${params}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateNotesTable(data.notes);
+                    updateNotesCount(data.notes.length);
+                    showFlashMessage(`✅ 成功載入 ${data.notes.length} 條筆記`, 'success');
+                } else {
+                    showFlashMessage('❌ 載入筆記失敗', 'error');
+                }
+            } catch (error) {
+                console.error('載入筆記時發生錯誤:', error);
+                showFlashMessage('❌ 載入筆記時發生錯誤', 'error');
+            }
+        }
+
+        // 更新筆記表格
+        function updateNotesTable(notes) {
+            const container = document.getElementById('notes-container');
+            
+            if (notes.length === 0) {
+                container.innerHTML = `
+                    <div class="no-notes">
+                        <p>📝 找不到符合條件的筆記</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="table-container">
+                    <table class="notes-table">
+                        <thead>
+                            <tr>
+                                <th data-sort="stock_code">股票代碼</th>
+                                <th data-sort="stock_name">股票名稱</th>
+                                <th data-sort="note_type">類型</th>
+                                <th>內容</th>
+                                <th data-sort="created_at">記錄時間</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="notes-tbody">
+                            ${notes.map(note => `
+                                <tr data-note-id="${note.id}">
+                                    <td class="stock-code">${note.stock_code}</td>
+                                    <td class="stock-name">${note.stock_name}</td>
+                                    <td class="note-type">
+                                        <span class="type-badge ${note.note_type.toLowerCase()}">${note.note_type}</span>
+                                    </td>
+                                    <td class="note-content">${note.content}</td>
+                                    <td class="created-time">${note.created_at}</td>
+                                    <td class="actions">
+                                        <button class="action-btn edit-btn" onclick="editNote(${note.id})">編輯</button>
+                                        <button class="action-btn delete-btn" onclick="deleteNote(${note.id})">刪除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="stats">
+                    <p>共計 <strong id="notes-count">${notes.length}</strong> 條筆記</p>
+                </div>
+            `;
+        }
+
+        // 更新筆記數量
+        function updateNotesCount(count) {
+            const countElement = document.getElementById('notes-count');
+            if (countElement) {
+                countElement.textContent = count;
+            }
+        }
+
+        // 編輯筆記
+        async function editNote(noteId) {
+            try {
+                const response = await fetch(`/api/notes/${noteId}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    const note = data.note;
+                    document.getElementById('edit-note-id').value = note.id;
+                    document.getElementById('edit-stock-code').textContent = note.stock_code;
+                    document.getElementById('edit-stock-name').textContent = note.stock_name;
+                    document.getElementById('edit-created-at').textContent = note.created_at;
+                    document.getElementById('edit-note-type').value = note.note_type;
+                    document.getElementById('edit-content').value = note.content;
+                    
+                    openEditModal();
+                } else {
+                    showFlashMessage('❌ 載入筆記失敗', 'error');
+                }
+            } catch (error) {
+                console.error('載入筆記時發生錯誤:', error);
+                showFlashMessage('❌ 載入筆記時發生錯誤', 'error');
+            }
+        }
+
+        // 刪除筆記
+        async function deleteNote(noteId) {
+            if (!confirm('您確定要刪除這條筆記嗎？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/delete/${noteId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    // 從 DOM 中移除該行
+                    const row = document.querySelector(`tr[data-note-id="${noteId}"]`);
+                    if (row) {
+                        row.remove();
+                        // 更新筆記數量
+                        const currentCount = parseInt(document.getElementById('notes-count').textContent);
+                        document.getElementById('notes-count').textContent = currentCount - 1;
+                        
+                        // 如果沒有筆記了，顯示空狀態
+                        if (currentCount - 1 === 0) {
+                            document.getElementById('notes-container').innerHTML = `
+                                <div class="no-notes">
+                                    <p>📝 找不到符合條件的筆記</p>
+                                </div>
+                            `;
+                        }
+                    }
+                    showFlashMessage('✅ 筆記已刪除', 'success');
+                } else {
+                    showFlashMessage('❌ 刪除失敗', 'error');
+                }
+            } catch (error) {
+                console.error('刪除筆記時發生錯誤:', error);
+                showFlashMessage('❌ 刪除失敗', 'error');
+            }
+        }
+
+        // Modal 相關功能
+        const modal = document.getElementById('edit-modal');
+        const closeBtn = document.querySelector('.close');
+
+        function openEditModal() {
+            modal.style.display = 'block';
+        }
+
+        function closeEditModal() {
+            modal.style.display = 'none';
+        }
+
+        closeBtn.addEventListener('click', closeEditModal);
+
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        });
+
+        // 編輯表單提交
+        document.getElementById('edit-note-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const noteId = document.getElementById('edit-note-id').value;
+            const noteType = document.getElementById('edit-note-type').value;
+            const content = document.getElementById('edit-content').value;
+
+            try {
+                const response = await fetch(`/edit/${noteId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `note_type=${encodeURIComponent(noteType)}&content=${encodeURIComponent(content)}`
+                });
+
+                if (response.ok) {
+                    // 更新表格中的內容
+                    const row = document.querySelector(`tr[data-note-id="${noteId}"]`);
+                    if (row) {
+                        row.querySelector('.note-type .type-badge').textContent = noteType;
+                        row.querySelector('.note-type .type-badge').className = `type-badge ${noteType.toLowerCase()}`;
+                        row.querySelector('.note-content').textContent = content;
+                    }
+                    
+                    closeEditModal();
+                    showFlashMessage('✅ 筆記更新成功', 'success');
+                } else {
+                    showFlashMessage('❌ 筆記更新失敗', 'error');
+                }
+            } catch (error) {
+                console.error('更新筆記時發生錯誤:', error);
+                showFlashMessage('❌ 筆記更新失敗', 'error');
+            }
+        });
+
+        // 顯示 Flash 訊息
+        function showFlashMessage(message, type) {
+            const flashContainer = document.getElementById('flash-messages');
+            const flashMessage = document.createElement('div');
+            flashMessage.className = `flash-message ${type}`;
+            flashMessage.textContent = message;
+            
+            flashContainer.appendChild(flashMessage);
+            
+            // 自動隱藏
+            setTimeout(() => {
+                flashMessage.style.opacity = '0';
+                setTimeout(() => flashMessage.remove(), 300);
+            }, 5000);
+        }
+
+        // 頁面載入完成後初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 設置初始排序狀態
+            sortFieldSelect.value = currentSortField;
+            sortOrderBtn.dataset.order = currentSortOrder;
+            
+            showFlashMessage('🚀 AJAX 測試頁面已載入，點擊上方按鈕開始測試！', 'success');
+        });
+
+        // 全域變數
+        let searchTimeout;
+    </script>
+</body>
+</html>
