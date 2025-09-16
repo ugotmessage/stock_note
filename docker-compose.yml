@@ -11,13 +11,13 @@ services:
     volumes:
       - .:/app
     ports:
-      - "5001:5000"
+      - "127.0.0.1:5001:5000"
     environment:
       # 資料庫連接配置 - 可透過環境變數覆蓋
       - MYSQL_HOST=${MYSQL_HOST:-localhost}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       - MYSQL_USER=${MYSQL_USER:-snote}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:rootpassword}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-)EkxSYA9YJFu(i)a}
       - MYSQL_DATABASE=${MYSQL_DATABASE:-stock_note_project}
       # Flask 配置
       - FLASK_APP=app.py
