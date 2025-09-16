@@ -1,0 +1,53 @@
+# 獨立部署版本 - 包含 MySQL 資料庫
+# 使用方式: docker-compose -f docker-compose.standalone.yml up -d
+
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: stock-note-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: stock_note_project
+      MYSQL_USER: snote
+      MYSQL_PASSWORD: rootpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init_database.sql:/docker-entrypoint-initdb.d/init_database.sql
+    networks:
+      - stock-note-network
+    restart: unless-stopped
+
+  python-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: stock-note-app:latest
+    container_name: stock-note-app
+    working_dir: /app
+    volumes:
+      - .:/app
+    networks:
+      - stock-note-network
+    ports:
+      - "5001:5000"
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=snote
+      - MYSQL_PASSWORD=rootpassword
+      - MYSQL_DATABASE=stock_note_project
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+    depends_on:
+      - mysql
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  stock-note-network:
+    driver: bridge

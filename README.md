@@ -17,70 +17,65 @@
 - **前端**: HTML5 + CSS3 + 原生JavaScript
 - **模板引擎**: Jinja2
 
-## 📋 系統要求
-
-- Python 3.7+
-- MySQL 5.7+
-- 現代瀏覽器
-
 ## 🚀 快速開始
 
-### 1. 克隆項目
+### Docker 部署（推薦）
+
+#### 連接到現有資料庫
 ```bash
+# 1. 下載專案
 git clone <repository-url>
 cd stock_note_project
+
+# 2. 設定環境變數
+export MYSQL_HOST=your-mysql-host
+export MYSQL_USER=your-username
+export MYSQL_PASSWORD=your-password
+export MYSQL_DATABASE=stock_note_project
+
+# 3. 啟動應用
+docker-compose up -d
 ```
 
-### 2. 安裝依賴
+#### 獨立部署（包含資料庫）
 ```bash
+# 1. 下載專案
+git clone <repository-url>
+cd stock_note_project
+
+# 2. 一鍵啟動
+docker-compose -f docker-compose.standalone.yml up -d
+```
+
+### 傳統部署
+
+```bash
+# 1. 安裝依賴
 pip install -r requirements.txt
-```
 
-### 3. 配置數據庫
-1. 創建MySQL數據庫 `stock_project`
-2. 執行以下SQL腳本創建表結構：
-
-```sql
-CREATE TABLE IF NOT EXISTS stocks (
-    `stock_code` VARCHAR(10) NOT NULL,
-    `stock_name` VARCHAR(50) NOT NULL,
-    `industry` VARCHAR(50) NULL,
-    `last_updated` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`stock_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS notes (
-    `id` INT NOT NULL AUTO_INCREMENT,
-    `stock_code` VARCHAR(10) NOT NULL,
-    `note_type` ENUM('TAG', 'STORY') NOT NULL,
-    `content` TEXT NOT NULL,
-    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    FOREIGN KEY (`stock_code`) REFERENCES stocks(`stock_code`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### 4. 修改配置
-編輯 `config.py` 文件，填入您的MySQL連接信息：
-
-```python
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'your_username',
-    'password': 'your_password',
-    'database': 'stock_project',
-    'charset': 'utf8mb4',
-    'autocommit': True
-}
-```
-
-### 5. 啟動應用
-```bash
+# 2. 配置資料庫（參考 docs/ 資料夾）
+# 3. 啟動應用
 python app.py
 ```
 
-### 6. 訪問系統
-打開瀏覽器訪問: http://localhost:5000
+## 📚 詳細文檔
+
+所有詳細的部署和配置說明請參考 `docs/` 資料夾：
+
+### 🚀 部署相關
+- **[部署指南](docs/DEPLOYMENT.md)** - Docker 部署完整說明
+- **[實體 MySQL 部署](docs/PHYSICAL_MYSQL_DEPLOYMENT.md)** - 連接到實體 MySQL 的設定
+
+### 🔧 功能相關
+- **[功能說明](docs/README_NOTES_FEATURES.md)** - 詳細功能介紹
+
+### 🐛 修復記錄
+- **[CSS 修復說明](docs/CSS_FIX_SUMMARY.md)** - 樣式修復記錄
+- **[AJAX 改進說明](docs/AJAX_IMPROVEMENTS.md)** - AJAX 功能改進記錄
+
+## 🌐 訪問系統
+
+部署完成後，打開瀏覽器訪問: http://localhost:5001
 
 ## 📁 項目結構
 

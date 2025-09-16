@@ -1,22 +1,25 @@
-version: '3.7'
+version: '3.8'
 
 services:
   python-app:
     build:
       context: .
       dockerfile: Dockerfile
-    image: python-app:latest
-    container_name: python-app
+    image: stock-note-app:latest
+    container_name: stock-note-app
     working_dir: /app
     volumes:
-      - .:/app   # 把當前目錄程式碼掛進容器
-    networks:
-      - my-network
+      - .:/app
     ports:
       - "5001:5000"
-    #env_file:
-    #  - .env
-
-networks:
-  my-network:
-    external: true
+    environment:
+      # 資料庫連接配置 - 可透過環境變數覆蓋
+      - MYSQL_HOST=${MYSQL_HOST:-localhost}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-snote}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:rootpassword}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-stock_note_project}
+      # Flask 配置
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+    restart: unless-stopped
