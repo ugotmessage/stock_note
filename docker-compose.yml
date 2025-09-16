@@ -22,4 +22,10 @@ services:
       # Flask 配置
       - FLASK_APP=app.py
       - FLASK_ENV=production
+    networks:
+      - my-network
     restart: unless-stopped
+
+networks:
+  my-network:
+    external: true
