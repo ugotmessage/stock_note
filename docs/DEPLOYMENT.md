@@ -20,11 +20,17 @@ cd stock_note_project
 ```
 
 #### 2. 設定環境變數
-創建 `.env` 文件（可選）：
 ```bash
-# 資料庫配置
+# 複製環境變數範本
+cp env.example .env
+
+# 編輯 .env 文件，填入您的資料庫資訊
+nano .env
+```
+
+**必要的環境變數：**
+```bash
 MYSQL_HOST=your-mysql-host
-MYSQL_PORT=3306
 MYSQL_USER=your-username
 MYSQL_PASSWORD=your-password
 MYSQL_DATABASE=stock_note_project
@@ -45,7 +51,25 @@ git clone <repository-url>
 cd stock_note_project
 ```
 
-#### 2. 一鍵啟動（包含 MySQL）
+#### 2. 設定環境變數
+```bash
+# 複製環境變數範本
+cp env.example .env
+
+# 編輯 .env 文件，設定所有必要的環境變數
+nano .env
+```
+
+**必要的環境變數：**
+```bash
+MYSQL_HOST=mysql
+MYSQL_USER=your-username
+MYSQL_PASSWORD=your-password
+MYSQL_DATABASE=stock_note_project
+MYSQL_ROOT_PASSWORD=your-root-password
+```
+
+#### 3. 一鍵啟動（包含 MySQL）
 ```bash
 docker-compose -f docker-compose.standalone.yml up -d
 ```

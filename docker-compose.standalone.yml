@@ -8,10 +8,10 @@ services:
     image: mysql:8.0
     container_name: stock-note-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: stock_note_project
-      MYSQL_USER: snote
-      MYSQL_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-stock_note_project}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
@@ -33,12 +33,12 @@ services:
     networks:
       - stock-note-network
     ports:
-      - "5001:5000"
+      - "127.0.0.1:5001:5000"
     environment:
       - MYSQL_HOST=mysql
-      - MYSQL_USER=snote
-      - MYSQL_PASSWORD=rootpassword
-      - MYSQL_DATABASE=stock_note_project
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-stock_note_project}
       - FLASK_APP=app.py
       - FLASK_ENV=production
     depends_on:

@@ -28,10 +28,8 @@ git clone <repository-url>
 cd stock_note_project
 
 # 2. 設定環境變數
-export MYSQL_HOST=your-mysql-host
-export MYSQL_USER=your-username
-export MYSQL_PASSWORD=your-password
-export MYSQL_DATABASE=stock_note_project
+cp env.example .env
+# 編輯 .env 文件，填入您的資料庫資訊
 
 # 3. 啟動應用
 docker-compose up -d
@@ -43,7 +41,11 @@ docker-compose up -d
 git clone <repository-url>
 cd stock_note_project
 
-# 2. 一鍵啟動
+# 2. 設定環境變數
+cp env.example .env
+# 編輯 .env 文件，設定所有必要的環境變數
+
+# 3. 啟動應用
 docker-compose -f docker-compose.standalone.yml up -d
 ```
 
