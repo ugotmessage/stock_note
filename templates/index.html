@@ -49,6 +49,19 @@
                     <label for="content">內容 *</label>
                     <textarea id="content" name="content" placeholder="輸入您的筆記內容..." required rows="4"></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="ref">資料來源</label>
+                    <div class="search-container">
+                        <input type="text" id="ref" name="ref" placeholder="輸入資料來源（可選）..." maxlength="255" list="ref-options">
+                        <datalist id="ref-options">
+                            <!-- 來源選項將由 JavaScript 動態載入 -->
+                        </datalist>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="ref_time">來源時間</label>
+                    <input type="datetime-local" id="ref_time" name="ref_time" placeholder="選擇來源時間（可選）...">
+                </div>
                 <button type="submit" class="submit-btn">💾 保存筆記</button>
             </form>
         </section>
@@ -83,6 +96,7 @@
                                     <th data-sort="stock_name" class="sortable-header">股票名稱</th>
                                     <th data-sort="note_type" class="sortable-header">類型</th>
                                     <th>內容</th>
+                                    <th>來源</th>
                                     <th data-sort="created_at" class="sortable-header">記錄時間</th>
                                     <th>操作</th>
                                 </tr>
@@ -96,6 +110,16 @@
                                         <span class="type-badge {{ note.note_type.lower() }}">{{ note.note_type }}</span>
                                     </td>
                                     <td class="note-content">{{ note.content }}</td>
+                                    <td class="note-ref">
+                                        {% if note.ref %}
+                                            <span class="ref-badge">{{ note.ref }}</span>
+                                            {% if note.ref_time %}
+                                                <br><small class="ref-time">{{ note.ref_time }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="no-ref">-</span>
+                                        {% endif %}
+                                    </td>
                                     <td class="created-time">{{ note.created_at }}</td>
                                     <td class="actions">
                                         <button class="action-btn edit-btn" onclick="editNote({{ note.id }})">編輯</button>
@@ -158,6 +182,19 @@
                     <div class="form-group">
                         <label for="edit-content">內容 *</label>
                         <textarea id="edit-content" name="content" placeholder="輸入您的筆記內容..." required rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-ref">資料來源</label>
+                        <div class="search-container">
+                            <input type="text" id="edit-ref" name="ref" placeholder="輸入資料來源（可選）..." maxlength="255" list="edit-ref-options">
+                            <datalist id="edit-ref-options">
+                                <!-- 來源選項將由 JavaScript 動態載入 -->
+                            </datalist>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-ref_time">來源時間</label>
+                        <input type="datetime-local" id="edit-ref_time" name="ref_time" placeholder="選擇來源時間（可選）...">
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="submit-btn">💾 更新筆記</button>
@@ -309,6 +346,7 @@
                                 <th data-sort="stock_name" class="sortable-header">股票名稱</th>
                                 <th data-sort="note_type" class="sortable-header">類型</th>
                                 <th>內容</th>
+                                <th>來源</th>
                                 <th data-sort="created_at" class="sortable-header">記錄時間</th>
                                 <th>操作</th>
                             </tr>
@@ -322,6 +360,12 @@
                                         <span class="type-badge ${note.note_type.toLowerCase()}">${note.note_type}</span>
                                     </td>
                                     <td class="note-content">${note.content}</td>
+                                    <td class="note-ref">
+                                        ${note.ref ? 
+                                            `<span class="ref-badge">${note.ref}</span>${note.ref_time ? `<br><small class="ref-time">${note.ref_time}</small>` : ''}` : 
+                                            '<span class="no-ref">-</span>'
+                                        }
+                                    </td>
                                     <td class="created-time">${note.created_at}</td>
                                     <td class="actions">
                                         <button class="action-btn edit-btn" onclick="editNote(${note.id})">編輯</button>

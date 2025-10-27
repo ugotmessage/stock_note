@@ -33,6 +33,12 @@ cp env.example .env
 
 # 3. 啟動應用
 docker-compose up -d
+
+# 4. 執行數據庫遷移（重要！）
+docker-compose exec python-app python migrate.py migrate
+
+# 或者使用快捷腳本
+./scripts/migrate_in_docker.sh
 ```
 
 #### 獨立部署（包含資料庫）
@@ -47,6 +53,9 @@ cp env.example .env
 
 # 3. 啟動應用
 docker-compose -f docker-compose.standalone.yml up -d
+
+# 4. 執行數據庫遷移
+docker-compose -f docker-compose.standalone.yml exec python-app python migrate.py migrate
 ```
 
 ### 傳統部署
@@ -56,7 +65,14 @@ docker-compose -f docker-compose.standalone.yml up -d
 pip install -r requirements.txt
 
 # 2. 配置資料庫（參考 docs/ 資料夾）
-# 3. 啟動應用
+
+# 3. 執行數據庫遷移（重要！）
+python migrate.py migrate
+
+# 或使用快捷腳本
+./scripts/run_migration.sh
+
+# 4. 啟動應用
 python app.py
 ```
 
@@ -65,11 +81,17 @@ python app.py
 所有詳細的部署和配置說明請參考 `docs/` 資料夾：
 
 ### 🚀 部署相關
+- **[升級指南](docs/UPGRADE_GUIDE.md)** - 版本升級完整說明 ⭐
+- **[部署與遷移指南](docs/DEPLOYMENT_GUIDE.md)** - 完整部署和數據庫遷移指南
 - **[部署指南](docs/DEPLOYMENT.md)** - Docker 部署完整說明
 - **[實體 MySQL 部署](docs/PHYSICAL_MYSQL_DEPLOYMENT.md)** - 連接到實體 MySQL 的設定
 
 ### 🔧 功能相關
 - **[功能說明](docs/README_NOTES_FEATURES.md)** - 詳細功能介紹
+
+### 📊 資料庫管理
+- **[遷移快速參考](docs/MIGRATION_QUICK_REF.md)** - 常用遷移命令速查表 ⚡
+- **[資料庫遷移](docs/DATABASE_MIGRATIONS.md)** - 資料庫結構變更管理
 
 ### 🐛 修復記錄
 - **[CSS 修復說明](docs/CSS_FIX_SUMMARY.md)** - 樣式修復記錄
@@ -85,13 +107,24 @@ python app.py
 stock_note_project/
 ├── app.py              # Flask主應用
 ├── db_manager.py       # 數據庫操作模塊
+├── migrate.py          # 數據庫遷移系統 ⭐
+├── check_database.py   # 數據庫檢查
 ├── config.py           # 數據庫配置
 ├── requirements.txt    # Python依賴包
-├── README.md          # 項目說明
-├── templates/
-│   └── index.html     # 主頁模板
-└── static/
-    └── style.css      # 樣式文件
+├── migrations/         # 數據庫遷移文件 ⭐
+│   ├── 000_initial_schema.sql
+│   └── 001_add_ref_fields.sql
+├── scripts/            # 腳本工具
+│   ├── upgrade.sh      # 自動升級 ⭐
+│   ├── run_migration.sh
+│   └── migrate_in_docker.sh
+├── test/               # 測試文件
+├── templates/          # 模板
+│   ├── index.html
+│   └── edit_note.html
+├── static/             # 靜態文件
+│   └── style.css
+└── docs/               # 文檔
 ```
 
 ## 🔧 主要功能

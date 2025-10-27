@@ -252,6 +252,43 @@ header p {
     background: white;
     border-radius: 8px;
     overflow: hidden;
+    table-layout: fixed;
+}
+
+/* 表格欄位寬度設定 */
+.notes-table th:nth-child(1),
+.notes-table td:nth-child(1) {
+    width: 10%; /* 股票代碼 */
+}
+
+.notes-table th:nth-child(2),
+.notes-table td:nth-child(2) {
+    width: 15%; /* 股票名稱 */
+}
+
+.notes-table th:nth-child(3),
+.notes-table td:nth-child(3) {
+    width: 8%; /* 類型 */
+}
+
+.notes-table th:nth-child(4),
+.notes-table td:nth-child(4) {
+    width: 35%; /* 內容 */
+}
+
+.notes-table th:nth-child(5),
+.notes-table td:nth-child(5) {
+    width: 15%; /* 來源 */
+}
+
+.notes-table th:nth-child(6),
+.notes-table td:nth-child(6) {
+    width: 12%; /* 記錄時間 */
+}
+
+.notes-table th:nth-child(7),
+.notes-table td:nth-child(7) {
+    width: 15%; /* 操作 */
 }
 
 .notes-table th {
@@ -308,6 +345,33 @@ header p {
 .type-badge.story {
     background-color: #fff3cd;
     color: #856404;
+}
+
+/* 來源欄位樣式 */
+.note-ref {
+    text-align: left;
+}
+
+.ref-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.ref-time {
+    color: #666;
+    font-size: 0.75rem;
+    margin-top: 2px;
+    display: block;
+}
+
+.no-ref {
+    color: #999;
+    font-style: italic;
 }
 
 /* 內容欄位樣式 */

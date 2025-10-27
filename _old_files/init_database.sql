@@ -22,10 +22,14 @@ CREATE TABLE IF NOT EXISTS notes (
     `stock_code` VARCHAR(10) NOT NULL,
     `note_type` ENUM('TAG', 'STORY') NOT NULL,
     `content` TEXT NOT NULL,
+    `ref` VARCHAR(255) NULL COMMENT '資料來源',
+    `ref_time` TIMESTAMP NULL COMMENT '來源時間',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    FOREIGN KEY (`stock_code`) REFERENCES stocks(`stock_code`) ON DELETE CASCADE
+    FOREIGN KEY (`stock_code`) REFERENCES stocks(`stock_code`) ON DELETE CASCADE,
+    INDEX `idx_notes_ref` (`ref`),
+    INDEX `idx_notes_ref_time` (`ref_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 創建索引以提高查詢性能

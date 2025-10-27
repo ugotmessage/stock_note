@@ -123,7 +123,7 @@ def get_stock_by_code(stock_code):
             cursor.close()
             connection.close()
 
-def add_note(stock_code, stock_name, note_type, content):
+def add_note(stock_code, stock_name, note_type, content, ref=None, ref_time=None):
     """
     添加新的股票筆記
     參數:
@@ -131,6 +131,8 @@ def add_note(stock_code, stock_name, note_type, content):
         stock_name: 股票名稱
         note_type: 筆記類型 (TAG 或 STORY)
         content: 筆記內容
+        ref: 資料來源（可選）
+        ref_time: 來源時間（可選）
     返回: 布爾值，表示操作是否成功
     """
     connection = get_db_connection()
@@ -168,13 +170,13 @@ def add_note(stock_code, stock_name, note_type, content):
             cursor.execute(insert_stock_query, (stock_code, stock_name, None))
             print(f"已添加新股票: {stock_code} - {stock_name}")
         
-        # 添加筆記到notes表（包含當前時間）
+        # 添加筆記到notes表（包含當前時間和來源資訊）
         insert_note_query = """
-            INSERT INTO notes (stock_code, note_type, content, created_at) 
-            VALUES (%s, %s, %s, %s)
+            INSERT INTO notes (stock_code, note_type, content, ref, ref_time, created_at) 
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
         current_time = datetime.now()
-        cursor.execute(insert_note_query, (stock_code, note_type, content, current_time))
+        cursor.execute(insert_note_query, (stock_code, note_type, content, ref, ref_time, current_time))
         
         connection.commit()
         print(f"已成功添加筆記: {stock_code} - {stock_name} - {note_type} - {current_time}")
@@ -185,6 +187,42 @@ def add_note(stock_code, stock_name, note_type, content):
         if connection.is_connected():
             connection.rollback()
         return False
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+def get_ref_options(limit=10):
+    """
+    獲取常用的來源選項
+    參數:
+        limit: 返回結果數量限制
+    返回: 來源選項列表
+    """
+    connection = get_db_connection()
+    if not connection:
+        return []
+    
+    try:
+        cursor = connection.cursor()
+        
+        query = """
+            SELECT ref, COUNT(*) as count
+            FROM notes 
+            WHERE ref IS NOT NULL AND ref != ''
+            GROUP BY ref
+            ORDER BY count DESC, ref ASC
+            LIMIT %s
+        """
+        
+        cursor.execute(query, (limit,))
+        results = cursor.fetchall()
+        
+        return [row[0] for row in results]
+        
+    except Error as e:
+        print(f"獲取來源選項時發生錯誤: {e}")
+        return []
     finally:
         if connection.is_connected():
             cursor.close()
@@ -214,6 +252,8 @@ def get_all_notes(search_term='', sort_by='created_at', sort_order='DESC'):
                 s.stock_name,
                 n.note_type,
                 n.content,
+                n.ref,
+                n.ref_time,
                 n.created_at
             FROM notes n
             JOIN stocks s ON n.stock_code = s.stock_code
@@ -228,9 +268,10 @@ def get_all_notes(search_term='', sort_by='created_at', sort_order='DESC'):
                 WHERE n.stock_code LIKE %s 
                    OR s.stock_name LIKE %s 
                    OR n.content LIKE %s
+                   OR n.ref LIKE %s
             """
             search_pattern = f"%{search_term}%"
-            params = [search_pattern, search_pattern, search_pattern]
+            params = [search_pattern, search_pattern, search_pattern, search_pattern]
         
         # 排序
         valid_sort_fields = ['stock_code', 'stock_name', 'note_type', 'created_at']
