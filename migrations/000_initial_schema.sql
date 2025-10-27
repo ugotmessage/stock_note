@@ -33,10 +33,63 @@ CREATE TABLE IF NOT EXISTS notes (
     INDEX `idx_notes_ref_time` (`ref_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 創建索引以提高查詢性能
-CREATE INDEX idx_notes_stock_code ON notes(stock_code);
-CREATE INDEX idx_notes_created_at ON notes(created_at);
-CREATE INDEX idx_notes_updated_at ON notes(updated_at);
+-- 創建索引以提高查詢性能（檢查後再創建）
+-- 索引 idx_notes_stock_code
+SET @index_exists = (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'notes'
+    AND INDEX_NAME = 'idx_notes_stock_code'
+);
+
+SET @sql = IF(
+    @index_exists = 0,
+    'CREATE INDEX idx_notes_stock_code ON notes(stock_code)',
+    'SELECT ''idx_notes_stock_code 索引已存在'' AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 索引 idx_notes_created_at
+SET @index_exists = (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'notes'
+    AND INDEX_NAME = 'idx_notes_created_at'
+);
+
+SET @sql = IF(
+    @index_exists = 0,
+    'CREATE INDEX idx_notes_created_at ON notes(created_at)',
+    'SELECT ''idx_notes_created_at 索引已存在'' AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 索引 idx_notes_updated_at
+SET @index_exists = (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'notes'
+    AND INDEX_NAME = 'idx_notes_updated_at'
+);
+
+SET @sql = IF(
+    @index_exists = 0,
+    'CREATE INDEX idx_notes_updated_at ON notes(updated_at)',
+    'SELECT ''idx_notes_updated_at 索引已存在'' AS message'
+);
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 插入一些範例數據（可選）
 INSERT IGNORE INTO stocks (stock_code, stock_name, industry) VALUES
