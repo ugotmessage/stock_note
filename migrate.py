@@ -29,7 +29,7 @@ def create_migration_table():
         return False
     
     try:
-        cursor = connection.cursor()
+        cursor = connection.cursor(buffered=True)
         
         create_table_sql = """
         CREATE TABLE IF NOT EXISTS migrations (
@@ -60,7 +60,7 @@ def get_executed_migrations():
         return []
     
     try:
-        cursor = connection.cursor()
+        cursor = connection.cursor(buffered=True)
         cursor.execute("SELECT migration_name FROM migrations ORDER BY id")
         results = cursor.fetchall()
         return [row[0] for row in results]
@@ -79,7 +79,7 @@ def execute_migration(migration_file):
         return False
     
     try:
-        cursor = connection.cursor()
+        cursor = connection.cursor(buffered=True)
         
         # 讀取遷移文件
         with open(migration_file, 'r', encoding='utf-8') as f:
@@ -90,8 +90,20 @@ def execute_migration(migration_file):
         
         # 執行每個 SQL 語句
         for statement in sql_statements:
-            if statement:
-                cursor.execute(statement)
+            if statement and not statement.startswith('--'):
+                try:
+                    cursor.execute(statement)
+                    # 讀取所有結果以避免 "Unread result found" 錯誤
+                    try:
+                        results = cursor.fetchall()
+                    except (Exception, Error):
+                        pass  # 某些語句沒有返回結果，忽略錯誤
+                except Error as e:
+                    # 忽略 "索引已存在" 或 "欄位已存在" 的錯誤（這是預期的）
+                    if "Duplicate key name" in str(e) or "Duplicate column name" in str(e):
+                        print(f"⚠️  跳過（已存在）: {statement[:50]}...")
+                    else:
+                        raise e
         
         # 記錄遷移執行
         migration_name = os.path.basename(migration_file)
