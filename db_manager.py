@@ -299,6 +299,8 @@ def get_all_notes(search_term='', sort_by='created_at', sort_order='DESC'):
         for note in notes:
             if note['created_at']:
                 note['created_at'] = note['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            if note['ref_time']:
+                note['ref_time'] = note['ref_time'].strftime('%Y-%m-%d %H:%M:%S')
         
         return notes
         
@@ -331,6 +333,8 @@ def get_note_by_id(note_id):
                 s.stock_name,
                 n.note_type,
                 n.content,
+                n.ref,
+                n.ref_time,
                 n.created_at
             FROM notes n
             JOIN stocks s ON n.stock_code = s.stock_code
@@ -340,8 +344,11 @@ def get_note_by_id(note_id):
         cursor.execute(query, (note_id,))
         note = cursor.fetchone()
         
-        if note and note['created_at']:
-            note['created_at'] = note['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+        if note:
+            if note['created_at']:
+                note['created_at'] = note['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            if note['ref_time']:
+                note['ref_time'] = note['ref_time'].strftime('%Y-%m-%d %H:%M:%S')
         
         return note
         
@@ -353,13 +360,15 @@ def get_note_by_id(note_id):
             cursor.close()
             connection.close()
 
-def update_note(note_id, note_type, content):
+def update_note(note_id, note_type, content, ref=None, ref_time=None):
     """
     更新筆記
     參數:
         note_id: 筆記ID
         note_type: 新的筆記類型
         content: 新的內容
+        ref: 資料來源（可選）
+        ref_time: 來源時間（可選）
     返回: 布爾值，表示是否成功
     """
     connection = get_db_connection()
@@ -374,14 +383,14 @@ def update_note(note_id, note_type, content):
             print(f"無效的筆記類型: {note_type}")
             return False
         
-        # 更新筆記
+        # 更新筆記（包含來源資訊）
         update_query = """
             UPDATE notes 
-            SET note_type = %s, content = %s, updated_at = CURRENT_TIMESTAMP
+            SET note_type = %s, content = %s, ref = %s, ref_time = %s, updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
         """
         
-        cursor.execute(update_query, (note_type, content, note_id))
+        cursor.execute(update_query, (note_type, content, ref, ref_time, note_id))
         connection.commit()
         
         if cursor.rowcount > 0:

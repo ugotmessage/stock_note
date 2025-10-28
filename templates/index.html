@@ -97,6 +97,7 @@
                                     <th data-sort="note_type" class="sortable-header">類型</th>
                                     <th>內容</th>
                                     <th>來源</th>
+                                    <th>來源時間</th>
                                     <th data-sort="created_at" class="sortable-header">記錄時間</th>
                                     <th>操作</th>
                                 </tr>
@@ -113,9 +114,13 @@
                                     <td class="note-ref">
                                         {% if note.ref %}
                                             <span class="ref-badge">{{ note.ref }}</span>
-                                            {% if note.ref_time %}
-                                                <br><small class="ref-time">{{ note.ref_time }}</small>
-                                            {% endif %}
+                                        {% else %}
+                                            <span class="no-ref">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="ref-time">
+                                        {% if note.ref_time %}
+                                            {{ note.ref_time }}
                                         {% else %}
                                             <span class="no-ref">-</span>
                                         {% endif %}
@@ -347,6 +352,7 @@
                                 <th data-sort="note_type" class="sortable-header">類型</th>
                                 <th>內容</th>
                                 <th>來源</th>
+                                <th>來源時間</th>
                                 <th data-sort="created_at" class="sortable-header">記錄時間</th>
                                 <th>操作</th>
                             </tr>
@@ -361,10 +367,10 @@
                                     </td>
                                     <td class="note-content">${note.content}</td>
                                     <td class="note-ref">
-                                        ${note.ref ? 
-                                            `<span class="ref-badge">${note.ref}</span>${note.ref_time ? `<br><small class="ref-time">${note.ref_time}</small>` : ''}` : 
-                                            '<span class="no-ref">-</span>'
-                                        }
+                                        ${note.ref ? `<span class="ref-badge">${note.ref}</span>` : '<span class="no-ref">-</span>'}
+                                    </td>
+                                    <td class="ref-time">
+                                        ${note.ref_time ? note.ref_time : '<span class="no-ref">-</span>'}
                                     </td>
                                     <td class="created-time">${note.created_at}</td>
                                     <td class="actions">
@@ -407,6 +413,16 @@
                     document.getElementById('edit-created-at').textContent = note.created_at;
                     document.getElementById('edit-note-type').value = note.note_type;
                     document.getElementById('edit-content').value = note.content;
+                    
+                    // 設置來源和來源時間
+                    document.getElementById('edit-ref').value = note.ref || '';
+                    // 如果有來源時間，需要轉換格式（從 YYYY-MM-DD HH:MM:SS 轉為 YYYY-MM-DDTHH:MM）
+                    if (note.ref_time) {
+                        const refTime = note.ref_time.replace(' ', 'T').slice(0, 16);
+                        document.getElementById('edit-ref_time').value = refTime;
+                    } else {
+                        document.getElementById('edit-ref_time').value = '';
+                    }
                     
                     openEditModal();
                 } else {
@@ -487,14 +503,23 @@
             const noteId = document.getElementById('edit-note-id').value;
             const noteType = document.getElementById('edit-note-type').value;
             const content = document.getElementById('edit-content').value;
+            const ref = document.getElementById('edit-ref').value;
+            const refTime = document.getElementById('edit-ref_time').value;
 
             try {
+                const formData = new URLSearchParams({
+                    note_type: noteType,
+                    content: content,
+                    ref: ref,
+                    ref_time: refTime
+                });
+
                 const response = await fetch(`/edit/${noteId}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `note_type=${encodeURIComponent(noteType)}&content=${encodeURIComponent(content)}`
+                    body: formData.toString()
                 });
 
                 if (response.ok) {
@@ -504,6 +529,23 @@
                         row.querySelector('.note-type .type-badge').textContent = noteType;
                         row.querySelector('.note-type .type-badge').className = `type-badge ${noteType.toLowerCase()}`;
                         row.querySelector('.note-content').textContent = content;
+                        
+                        // 更新來源
+                        const refCell = row.querySelector('.note-ref');
+                        if (ref) {
+                            refCell.innerHTML = `<span class="ref-badge">${ref}</span>`;
+                        } else {
+                            refCell.innerHTML = '<span class="no-ref">-</span>';
+                        }
+                        
+                        // 更新來源時間
+                        const refTimeCell = row.querySelector('.ref-time');
+                        if (refTime) {
+                            const formattedTime = refTime.replace('T', ' ');
+                            refTimeCell.innerHTML = formattedTime;
+                        } else {
+                            refTimeCell.innerHTML = '<span class="no-ref">-</span>';
+                        }
                     }
                     
                     closeEditModal();

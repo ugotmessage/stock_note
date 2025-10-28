@@ -88,6 +88,8 @@ def edit_note(note_id):
     if request.method == 'POST':
         note_type = request.form.get('note_type', '').strip()
         content = request.form.get('content', '').strip()
+        ref = request.form.get('ref', '').strip()
+        ref_time = request.form.get('ref_time', '').strip()
 
         if note_type not in ['TAG', 'STORY'] or not content:
             if request.headers.get('Content-Type') == 'application/json':
@@ -95,7 +97,16 @@ def edit_note(note_id):
             flash('筆記類型或內容無效', 'error')
             return redirect(url_for('edit_note', note_id=note_id))
 
-        success = db_manager.update_note(note_id, note_type, content)
+        # 處理來源時間：轉換為 datetime 格式，如果提供了的話
+        ref_time_parsed = None
+        if ref_time:
+            try:
+                from datetime import datetime
+                ref_time_parsed = datetime.strptime(ref_time, '%Y-%m-%dT%H:%M')
+            except ValueError:
+                print(f"無效的來源時間格式: {ref_time}")
+
+        success = db_manager.update_note(note_id, note_type, content, ref if ref else None, ref_time_parsed)
         if success:
             if request.headers.get('Content-Type') == 'application/json':
                 return jsonify({'success': True, 'message': '筆記更新成功'})
@@ -200,6 +211,8 @@ def add_note():
 		stock_name = request.form.get('stock_name', '').strip()
 		note_type = request.form.get('note_type', '').strip()
 		content = request.form.get('content', '').strip()
+		ref = request.form.get('ref', '').strip()
+		ref_time = request.form.get('ref_time', '').strip()
 
 		if not all([stock_code, stock_name, note_type, content]):
 			flash('所有欄位都是必填的', 'error')
@@ -208,7 +221,16 @@ def add_note():
 			flash('無效的筆記類型', 'error')
 			return redirect(url_for('index'))
 
-		success = db_manager.add_note(stock_code, stock_name, note_type, content)
+		# 處理來源時間：轉換為 datetime 格式，如果提供了的話
+		ref_time_parsed = None
+		if ref_time:
+			try:
+				from datetime import datetime
+				ref_time_parsed = datetime.strptime(ref_time, '%Y-%m-%dT%H:%M')
+			except ValueError:
+				print(f"無效的來源時間格式: {ref_time}")
+
+		success = db_manager.add_note(stock_code, stock_name, note_type, content, ref if ref else None, ref_time_parsed)
 		flash(f'成功添加筆記: {stock_code} - {stock_name}', 'success' if success else '添加筆記失敗', 'error')
 	except Exception as e:
 		print(f"添加筆記時發生錯誤: {e}")
